@@ -14,8 +14,12 @@ from src.ingestion import DocumentStore, IngestionPipeline
 from src.rag_engine import RAGEngine
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
+import langchain
 
 from src.agent import get_agent
+
+# Enable LangChain debug mode so we can see the Agent's thoughts and tool calls in the terminal!
+langchain.debug = True
 
 # Basic logging setup
 logging.basicConfig(level=logging.INFO)
