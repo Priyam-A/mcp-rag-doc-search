@@ -81,19 +81,7 @@ except Exception as e:
 
 
 @mcp.tool()
-def query_documents(
-    question: Annotated[
-        str, Field(description="The natural language question to answer")
-    ],
-    top_k: Annotated[
-        int,
-        Field(
-            description="Number of relevant document chunks to retrieve (1-20)",
-            ge=1,
-            le=20,
-        ),
-    ] = 5,
-) -> str:
+def query_documents(question: str, top_k: int = 5) -> str:
     """Ask a natural language question across all ingested PDF documents.
 
     Returns a grounded answer with source attribution including document name,
@@ -129,12 +117,7 @@ def list_documents() -> str:
 
 
 @mcp.tool()
-def get_document_summary(
-    document_name: Annotated[
-        str,
-        Field(description="Exact name of the document to summarize (e.g., 'report.pdf')"),
-    ],
-) -> str:
+def get_document_summary(document_name: str) -> str:
     """Generate a concise summary of a specific document.
 
     Retrieves key content from the document and produces a 3-5 paragraph summary
@@ -149,23 +132,7 @@ def get_document_summary(
 
 
 @mcp.tool()
-def compare_documents(
-    document_a: Annotated[
-        str, Field(description="Name of the first document (e.g., 'paper1.pdf')")
-    ],
-    document_b: Annotated[
-        str, Field(description="Name of the second document (e.g., 'paper2.pdf')")
-    ],
-    aspect: Annotated[
-        str,
-        Field(
-            description=(
-                "The specific aspect to compare "
-                "(e.g., 'methodology', 'conclusions', 'key findings')"
-            )
-        ),
-    ],
-) -> str:
+def compare_documents(document_a: str, document_b: str, aspect: str) -> str:
     """Compare two documents on a specific aspect.
 
     Retrieves relevant content from both documents and generates a structured
@@ -189,12 +156,7 @@ def compare_documents(
 
 
 @mcp.tool()
-def delete_document(
-    document_name: Annotated[
-        str,
-        Field(description="Exact name of the document to remove (e.g., 'old_report.pdf')"),
-    ],
-) -> str:
+def delete_document(document_name: str) -> str:
     """Remove a document and all its chunks from the index.
 
     This permanently deletes the document's embeddings from the vector store.
@@ -220,12 +182,7 @@ def delete_document(
 
 
 @mcp.tool()
-def add_document(
-    source_path: Annotated[
-        str,
-        Field(description="Absolute path to the PDF file to add to the knowledge base"),
-    ],
-) -> str:
+def add_document(source_path: str) -> str:
     """Add a single PDF document to the knowledge base and index it immediately.
 
     Copies the provided PDF file into the local documents directory and runs the
@@ -266,14 +223,7 @@ def add_document(
 
 
 @mcp.tool()
-def ingest_documents(
-    directory: Annotated[
-        str,
-        Field(
-            description="Path to directory containing PDF files to ingest",
-        ),
-    ] = "./documents",
-) -> str:
+def ingest_documents(directory: str = "./documents") -> str:
     """Ingest or re-ingest PDF documents from a directory.
 
     Parses all PDFs in the specified directory, splits them into chunks,
