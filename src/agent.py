@@ -25,7 +25,9 @@ def get_agent(tools: list):
         "1. When a user asks a question, decide which tool is best to use. "
         "2. If you use `query_documents`, you will receive an answer along with sources. "
         "3. YOU MUST ALWAYS cite the document name and page number directly in your final response to the user. "
-        "4. Be concise, professional, and helpful."
+        "4. Be concise, professional, and helpful. "
+        "5. IMPORTANT: When calling tools, provide ONLY the literal string or integer values. DO NOT output JSON schema dictionaries. "
+        "6. If you cannot understand what to do or are unsure which tool to use, default to using `query_documents`."
     )
         
     # Create the React agent
