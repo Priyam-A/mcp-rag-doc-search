@@ -58,7 +58,7 @@ class RAGEngine:
         )
         self.relevance_threshold = config.relevance_threshold
 
-    def query_documents(self, question: str, top_k: int = 5, history: list[dict] | None = None) -> dict:
+    def query_documents(self, question: str, top_k: int = 5) -> dict:
         """Answer a question using RAG over ingested documents.
 
         Args:
@@ -93,7 +93,7 @@ class RAGEngine:
 
         # Generate answer via LLM
         prompt = self._build_qa_prompt(question, context)
-        answer = self.llm.generate(prompt, system_prompt=QA_SYSTEM_PROMPT, history=history)
+        answer = self.llm.generate(prompt, system_prompt=QA_SYSTEM_PROMPT)
 
         # Build source references
         sources = self._extract_sources(relevant)
