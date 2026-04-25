@@ -1,0 +1,22 @@
+# Environments
+venv/
+env/
+.env
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Application Data
+# We ignore the database directory to avoid committing large binary vector files
+data/
+
+# Note: We are NOT ignoring the `documents/` folder. 
+# You should commit the 4-5 sample PDFs there so reviewers can run your code!
