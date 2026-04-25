@@ -181,8 +181,7 @@ Ask a natural language question across all ingested PDF documents.
 ### `list_documents`
 List all ingested documents with metadata.
 
-| Parameter | None | | | |
-|---|---|---|---|---|
+*Takes no parameters.*
 
 **Response:**
 ```json
