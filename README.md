@@ -319,8 +319,9 @@ AI coding assistants excel at **accelerating the known** — boilerplate, API in
 
 With more time, the following enhancements would add value:
 
-- **Research Mode:** Tag documents as "base" vs "secondary" with weighted retrieval boosting base-paper chunks by a configurable multiplier
-- **Hybrid Search:** Combine semantic (vector) search with BM25 keyword search for better recall on technical terms
-- **Streaming Responses:** Stream LLM answers back to the client for faster perceived response time
-- **Document Versioning:** Track re-ingestion history and allow querying against specific document versions
-- **Caching:** Cache frequent queries and their embeddings to reduce latency on repeated questions
+- **Streaming Responses:** Stream LangChain agent tool executions and LLM answers back to the Web UI via WebSockets or Server-Sent Events (SSE) for faster perceived response times.
+- **Dynamic Retrieval (Dynamic K):** Implement a dynamic `top_k` threshold based on query complexity. Simple queries might only need `top_k=2`, while synthesis queries might dynamically expand to `top_k=15` until the context threshold is met.
+- **Dynamic Model Switching:** Add a UI toggle to instantly switch between local inference (Ollama) for privacy and cloud inference (OpenAI) for complex reasoning without restarting the server.
+- **Hybrid Search:** Combine semantic (vector) search with BM25 keyword search for better recall on technical terms or proper nouns.
+- **Multi-Agent Orchestration:** Expand the LangGraph agent into a multi-agent system (e.g., a "Researcher" agent that queries documents and a "Synthesizer" agent that formats the output).
+- **Persistent Agent Memory:** Swap the in-memory chat history for a disk-backed SQLite/Postgres thread database (like LangGraph's `SqliteSaver`) to persist UI sessions across server restarts.
