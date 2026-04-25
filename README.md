@@ -145,25 +145,6 @@ npx -y @modelcontextprotocol/inspector python -m src.server
 # Opens at http://127.0.0.1:6274
 ```
 
-### Connect to Claude Desktop
-
-You can find your Claude Desktop configuration file here:
-- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
-- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-Add the following to that file:
-```json
-{
-  "mcpServers": {
-    "nexla-rag": {
-      "command": "python",
-      "args": ["-m", "src.server"],
-      "cwd": "/path/to/nexla-mcp-rag"
-    }
-  }
-}
-```
-
 ---
 
 ## 🔧 MCP Tools

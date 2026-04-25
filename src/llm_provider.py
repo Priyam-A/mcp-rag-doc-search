@@ -15,7 +15,7 @@ class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
 
     @abstractmethod
-    def generate(self, prompt: str, system_prompt: str = "") -> str:
+    def generate(self, prompt: str, system_prompt: str = "", history: list[dict] | None = None) -> str:
         """Generate a response from the LLM."""
         ...
 
@@ -27,7 +27,7 @@ class OllamaProvider(LLMProvider):
         self.model = model
         logger.info(f"Initializing Ollama provider with model: {model}")
 
-    def generate(self, prompt: str, system_prompt: str = "") -> str:
+    def generate(self, prompt: str, system_prompt: str = "", history: list[dict] | None = None) -> str:
         """Generate a response using Ollama."""
         try:
             import ollama
@@ -35,6 +35,8 @@ class OllamaProvider(LLMProvider):
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
+            if history:
+                messages.extend(history)
             messages.append({"role": "user", "content": prompt})
 
             response = ollama.chat(model=self.model, messages=messages)
@@ -69,12 +71,14 @@ class OpenAIProvider(LLMProvider):
                 "OpenAI package not installed. Run: pip install openai"
             )
 
-    def generate(self, prompt: str, system_prompt: str = "") -> str:
+    def generate(self, prompt: str, system_prompt: str = "", history: list[dict] | None = None) -> str:
         """Generate a response using OpenAI."""
         try:
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
+            if history:
+                messages.extend(history)
             messages.append({"role": "user", "content": prompt})
 
             response = self.client.chat.completions.create(
