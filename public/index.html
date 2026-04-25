@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexla Document Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h2>Nexla Intelligence</h2>
+            </div>
+            
+            <nav class="tabs">
+                <button class="tab-btn active" data-tab="chat-view">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    Chat
+                </button>
+                <button class="tab-btn" data-tab="docs-view">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                    Sources
+                </button>
+                <button class="tab-btn" data-tab="history-view">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    History
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="new-chat-btn" class="primary-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    New Session
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Chat View -->
+            <div id="chat-view" class="view active">
+                <div class="header">
+                    <h1>Document Q&A</h1>
+                    <p class="subtitle">Ask questions across your ingested knowledge base</p>
+                </div>
+                
+                <div class="chat-container" id="chat-messages">
+                    <div class="message assistant">
+                        <div class="avatar">N</div>
+                        <div class="message-content">
+                            Hello! I am connected to your document knowledge base. Upload PDFs in the Sources tab, and ask me any questions about them.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-area">
+                    <div class="input-box">
+                        <textarea id="chat-input" placeholder="Start typing..."></textarea>
+                        <button id="send-btn" class="icon-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents View -->
+            <div id="docs-view" class="view hidden">
+                <div class="header">
+                    <h1>Sources</h1>
+                    <p class="subtitle">Manage the PDFs in your knowledge base</p>
+                </div>
+
+                <div class="upload-area" id="drop-zone">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="upload-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <h3>Upload new source</h3>
+                    <p>Drag and drop PDF files here, or click to browse</p>
+                    <input type="file" id="file-input" accept=".pdf" multiple hidden>
+                    <button class="secondary-btn" onclick="document.getElementById('file-input').click()">Browse Files</button>
+                    <div id="upload-status" class="status-text hidden">Uploading...</div>
+                </div>
+
+                <div class="doc-list-container">
+                    <h3>Ingested Documents (<span id="doc-count">0</span>)</h3>
+                    <div class="doc-list" id="doc-list">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- History View -->
+            <div id="history-view" class="view hidden">
+                <div class="header">
+                    <h1>Session History</h1>
+                    <p class="subtitle">Review your current in-memory conversation</p>
+                </div>
+
+                <div class="history-container" id="history-list">
+                    <!-- Populated via JS -->
+                </div>
+                <div class="history-actions">
+                    <button id="clear-history-btn" class="danger-btn">Clear Session History</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

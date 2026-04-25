@@ -1,6 +1,8 @@
 # Environments
 venv/
 env/
+rag-env/
+web-env/
 .env
 
 # Python caching

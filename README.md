@@ -11,20 +11,21 @@ An MCP (Model Context Protocol) server that enables AI agents to ask natural-lan
 └──────────────┬──────────────────────┘
                │ MCP tool call (stdio)
                ▼
-┌─────────────────────────────────────┐
-│         FastMCP Server              │
-│  ┌───────────┬──────────────────┐   │
-│  │  Tools:   │                  │   │
-│  │  • query_documents           │   │
-│  │  • list_documents            │   │
-│  │  • get_document_summary      │   │
-│  │  • compare_documents         │   │
-│  │  • delete_document           │   │
-│  │  • ingest_documents          │   │
-│  └───────────┴──────────────────┘   │
-└──────────────┬──────────────────────┘
-               │
-               ▼
+┌─────────────────────────────────────┐      ┌─────────────────────────────────────┐
+│         FastMCP Server              │      │       FastAPI Companion App         │
+│  ┌───────────┬──────────────────┐   │      │       (NotebookLM Frontend)         │
+│  │  Tools:   │                  │   │      │                                     │
+│  │  • query_documents           │   │◄────►│  • /api/documents (upload/delete)   │
+│  │  • list_documents            │   │      │  • /api/chat (Q&A interface)        │
+│  │  • get_document_summary      │   │      │  • /api/history (session state)     │
+│  │  • compare_documents         │   │      └──────────────────┬──────────────────┘
+│  │  • delete_document           │   │                         │
+│  │  • ingest_documents          │   │                         │
+│  │  • add_document              │   │                         │
+│  └───────────┴──────────────────┘   │                         │
+└──────────────┬──────────────────────┘                         │
+               │                                                │
+               ▼                                                ▼
 ┌─────────────────────────────────────┐
 │          RAG Pipeline               │
 │                                     │
@@ -61,6 +62,7 @@ An MCP (Model Context Protocol) server that enables AI agents to ask natural-lan
 | Layer | File | Responsibility |
 |---|---|---|
 | **MCP Interface** | `src/server.py` | Tool definitions, MCP protocol compliance |
+| **Web API & UI** | `src/api.py`, `public/` | FastAPI companion server and Vanilla JS frontend |
 | **RAG Engine** | `src/rag_engine.py` | Query embedding, retrieval, answer generation |
 | **Document Ingestion** | `src/ingestion.py` | PDF parsing, chunking, embedding, indexing |
 | **LLM Provider** | `src/llm_provider.py` | Abstraction over Ollama / OpenAI |
@@ -120,11 +122,21 @@ cp /path/to/your/*.pdf documents/
 
 ### Step 4: Run the Server
 
+You have two ways to interact with the system:
+
+**Option A: The NotebookLM-Inspired Web UI (Bonus)**
+We built a custom frontend with chat history, document uploads, and source citations.
+```bash
+# Start the FastAPI companion server
+uvicorn src.api:app --port 8000
+# Then open http://localhost:8000 in your browser
+```
+
+**Option B: The Raw MCP Server**
+To run the standard MCP server on `stdio` transport for Claude Desktop:
 ```bash
 python -m src.server
 ```
-
-The server starts on **stdio** transport (standard for MCP clients like Claude Desktop).
 
 ### Step 5: Test with MCP Inspector
 
@@ -135,7 +147,11 @@ npx -y @modelcontextprotocol/inspector python -m src.server
 
 ### Connect to Claude Desktop
 
-Add to your `claude_desktop_config.json`:
+You can find your Claude Desktop configuration file here:
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Add the following to that file:
 ```json
 {
   "mcpServers": {
@@ -238,6 +254,15 @@ Ingest or re-ingest PDF documents from the documents directory.
 
 ---
 
+### `add_document`
+Add a single PDF document to the knowledge base and index it immediately.
+
+| Parameter | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `source_path` | `string` | ✅ | — | Absolute path to the PDF file to add |
+
+---
+
 ## ⚙️ Configuration
 
 | Environment Variable | Default | Description |
@@ -290,9 +315,9 @@ Chunks scoring below `0.3` similarity are discarded before sending to the LLM. T
 - **Code generation:** Used AI for boilerplate generation (project structure, config management, ChromaDB setup)
 - **README drafting:** AI helped structure the README to cover all required sections
 
-### What Worked
-- Trade-off discussions were highly productive — the AI provided structured comparisons with concrete metrics
-- Finding and synthesizing documentation from multiple sources (FastMCP docs, ChromaDB API, sentence-transformers) saved significant research time
+### What Worked & What Didn't
+- **What worked:** Trade-off discussions were highly productive — the AI provided structured comparisons with concrete metrics. Finding and synthesizing documentation from multiple sources (FastMCP docs, ChromaDB API) saved significant research time. The AI was exceptionally good at generating the UI CSS for the NotebookLM aesthetic.
+- **What didn't work:** The AI struggled with Windows-specific Python environment debugging. We hit a wall where `pymupdf` failed to install due to a `cmake` compilation error caused by a broken MSYS2 Python environment intercepting commands. The AI kept suggesting generic fixes until I explicitly ordered it to bypass the environment and use absolute paths to a clean Python 3.11 installation. File lock issues (`WinError 32`) on Windows also caused the AI to fail silent cleanup operations.
 
 ### What I Overrode / Corrected
 - Initially the AI suggested using the standalone `fastmcp` package (PrefectHQ). I corrected this to use the **official Anthropic MCP SDK** (`from mcp.server.fastmcp import FastMCP`) for better spec compliance

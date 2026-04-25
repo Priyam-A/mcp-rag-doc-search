@@ -17,6 +17,7 @@ import json
 import logging
 import sys
 from typing import Annotated
+import shutil
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
@@ -216,6 +217,52 @@ def delete_document(
     except Exception as e:
         logger.error(f"delete_document error: {e}")
         return json.dumps({"error": str(e), "document": document_name})
+
+
+@mcp.tool()
+def add_document(
+    source_path: Annotated[
+        str,
+        Field(description="Absolute path to the PDF file to add to the knowledge base"),
+    ],
+) -> str:
+    """Add a single PDF document to the knowledge base and index it immediately.
+
+    Copies the provided PDF file into the local documents directory and runs the
+    ingestion pipeline on it so it becomes available for queries.
+    """
+    try:
+        source_file = Path(source_path)
+        if not source_file.exists() or not source_file.is_file():
+            return json.dumps({
+                "error": "File not found or is not a valid file",
+                "source_path": source_path
+            }, indent=2)
+            
+        if source_file.suffix.lower() != ".pdf":
+            return json.dumps({
+                "error": "Only PDF files are supported",
+                "source_path": source_path
+            }, indent=2)
+            
+        # Copy file to documents directory
+        config.documents_dir.mkdir(parents=True, exist_ok=True)
+        target_path = config.documents_dir / source_file.name
+        
+        shutil.copy2(source_file, target_path)
+        
+        # Ingest just this new file
+        chunks_added = pipeline.ingest_pdf(target_path)
+        
+        return json.dumps({
+            "status": "success",
+            "document": source_file.name,
+            "chunks_added": chunks_added,
+            "message": f"Successfully added and indexed {source_file.name}"
+        }, indent=2)
+    except Exception as e:
+        logger.error(f"add_document error: {e}")
+        return json.dumps({"error": str(e), "source_path": source_path})
 
 
 @mcp.tool()
