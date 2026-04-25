@@ -25,9 +25,9 @@ An MCP (Model Context Protocol) server that enables AI agents to ask natural-lan
 │  └───────────┴──────────────────┘   │                         │
 └──────────────┬──────────────────────┘                         │
                │                                                │
-               ▼                                                ▼
-┌─────────────────────────────────────┐
-│          RAG Pipeline               │
+               ▼                                                │
+┌─────────────────────────────────────┐                         │
+│          RAG Pipeline               │◄────────────────────────┘
 │                                     │
 │  Query ──► Embed ──► ChromaDB       │
 │                      (retrieve)     │
