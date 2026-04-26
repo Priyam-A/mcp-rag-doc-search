@@ -11,10 +11,8 @@ from pydantic import BaseModel
 
 from src.config import config
 from src.ingestion import DocumentStore, IngestionPipeline
-from src.rag_engine import RAGEngine
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
-import langchain
 from langchain_core.globals import set_debug, set_verbose
 
 from src.agent import get_agent
@@ -30,7 +28,6 @@ logger = logging.getLogger("api")
 # Initialize core components (for /api/documents routes)
 store = DocumentStore()
 pipeline = IngestionPipeline(store=store)
-engine = RAGEngine(store=store)
 
 # Global agent references
 mcp_agent_executor = None

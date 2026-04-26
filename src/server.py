@@ -16,12 +16,10 @@ Tools:
 import json
 import logging
 import sys
-from typing import Annotated
 import shutil
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
-from pydantic import Field
 
 from src.config import config
 from src.ingestion import DocumentStore, IngestionPipeline
