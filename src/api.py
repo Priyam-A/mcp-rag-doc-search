@@ -15,7 +15,7 @@ from src.rag_engine import RAGEngine
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 import langchain
-from langchain.globals import set_debug, set_verbose
+from langchain_core.globals import set_debug, set_verbose
 
 from src.agent import get_agent
 
