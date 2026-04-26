@@ -1,72 +1,85 @@
 # 📄 Nexla Document Intelligence MCP Server
 
-An MCP (Model Context Protocol) server that enables AI agents to ask natural-language questions over PDF documents and receive grounded, source-attributed answers via a RAG (Retrieval-Augmented Generation) pipeline.
+An MCP (Model Context Protocol) server that enables AI agents to ask natural-language questions over PDF documents and receive grounded, source-attributed answers via a RAG (Retrieval-Augmented Generation) pipeline. Includes a **bonus** NotebookLM-inspired Web UI powered by an autonomous LangChain agent that consumes the MCP server over stdio.
 
 ## 🏗️ Architecture Overview
 
-```
-┌─────────────────────────────────────┐
-│   MCP Client (Claude / Inspector)   │
-│         AI Agent sends query        │
-└──────────────┬──────────────────────┘
-               │ MCP tool call (stdio)
-               ▼
-┌─────────────────────────────────────┐      ┌─────────────────────────────────────┐
-│         FastMCP Server              │      │       FastAPI Companion App         │
-│  ┌───────────┬──────────────────┐   │      │       (NotebookLM Frontend)         │
-│  │  Tools:   │                  │   │      │                                     │
-│  │  • query_documents           │   │◄────►│  • /api/documents (upload/delete)   │
-│  │  • list_documents            │   │      │  • /api/chat (Q&A interface)        │
-│  │  • get_document_summary      │   │      │  • /api/history (session state)     │
-│  │  • compare_documents         │   │      └──────────────────┬──────────────────┘
-│  │  • delete_document           │   │                         │
-│  │  • ingest_documents          │   │                         │
-│  │  • add_document              │   │                         │
-│  └───────────┴──────────────────┘   │                         │
-└──────────────┬──────────────────────┘                         │
-               │                                                │
-               ▼                                                │
-┌─────────────────────────────────────┐                         │
-│          RAG Pipeline               │◄────────────────────────┘
-│                                     │
-│  Query ──► Embed ──► ChromaDB       │
-│                      (retrieve)     │
-│                         │           │
-│              Context Assembly       │
-│              + Source Tracking       │
-│                         │           │
-│                    LLM (Ollama      │
-│                    or OpenAI)       │
-│                         │           │
-│              Grounded Answer        │
-│              + Source Citations      │
-└─────────────────────────────────────┘
+This project has a **dual-interface architecture**: a standards-compliant MCP Server for external AI clients, and a Web UI powered by an autonomous LangChain agent that consumes that same MCP Server over stdio.
 
-┌─────────────────────────────────────┐
-│       Document Ingestion            │
-│                                     │
-│  PDFs ──► PyMuPDF ──► Page-Aware    │
-│           Parser      Chunker       │
-│                          │          │
-│                    Sentence-        │
-│                    Transformers     │
-│                    (Embeddings)     │
-│                          │          │
-│                      ChromaDB       │
-│                    (Persistent)     │
-└─────────────────────────────────────┘
 ```
+                      ┌──────────────────────────────────────┐
+                      │      Web UI (Browser)                │
+                      │      NotebookLM-style Frontend       │
+                      └──────────────┬───────────────────────┘
+                                     │ HTTP (/api/chat)
+                                     ▼
+                      ┌──────────────────────────────────────┐
+                      │      FastAPI Server (src/api.py)     │
+                      │                                      │
+                      │   ┌──────────────────────────────┐   │
+                      │   │  LangGraph ReAct Agent       │   │
+                      │   │  (src/agent.py)              │   │
+                      │   │  Autonomous tool selection   │   │
+                      │   └──────────────┬───────────────┘   │
+                      └──────────────────┼───────────────────┘
+                                         │ langchain-mcp-adapters
+                                         │ (stdio transport)
+┌────────────────┐                       ▼
+│  MCP Client    │    stdio    ┌──────────────────────────────────────┐
+│  (Claude /     │────────────►│      FastMCP Server (src/server.py) │
+│   Inspector)   │             │                                      │
+└────────────────┘             │  Tools:                              │
+                               │   • query_documents                  │
+                               │   • list_documents                   │
+                               │   • get_document_summary             │
+                               │   • compare_documents                │
+                               │   • delete_document                  │
+                               │   • add_document                     │
+                               │   • ingest_documents                 │
+                               └──────────────┬───────────────────────┘
+                                              │
+                                              ▼
+                               ┌──────────────────────────────────────┐
+                               │      RAG Pipeline                    │
+                               │                                      │
+                               │  Query ──► Embed ──► ChromaDB        │
+                               │                      (retrieve)      │
+                               │                         │            │
+                               │              Context Assembly        │
+                               │              + Source Tracking        │
+                               │                         │            │
+                               │                    LLM (Ollama       │
+                               │                    or OpenAI)        │
+                               │                         │            │
+                               │              Grounded Answer         │
+                               │              + Source Citations       │
+                               └──────────────────────────────────────┘
+```
+
+**Key insight:** The Web UI does _not_ call RAG functions directly. Instead, the LangChain agent spawns the MCP server as a subprocess and communicates with it over the official MCP protocol using `langchain-mcp-adapters`. This means both Claude Desktop and the Web UI consume the **exact same tool interface**.
 
 ### Component Responsibilities
 
 | Layer | File | Responsibility |
 |---|---|---|
-| **MCP Interface** | `src/server.py` | Tool definitions, MCP protocol compliance |
-| **Web API & UI** | `src/api.py`, `public/` | FastAPI companion server and Vanilla JS frontend |
-| **RAG Engine** | `src/rag_engine.py` | Query embedding, retrieval, answer generation |
-| **Document Ingestion** | `src/ingestion.py` | PDF parsing, chunking, embedding, indexing |
-| **LLM Provider** | `src/llm_provider.py` | Abstraction over Ollama / OpenAI |
-| **Configuration** | `src/config.py` | Environment variables, defaults, model selection |
+| **MCP Server** | `src/server.py` | Tool definitions, MCP protocol compliance via FastMCP |
+| **LangChain Agent** | `src/agent.py` | Autonomous tool selection via LangGraph ReAct agent |
+| **Web API & UI** | `src/api.py`, `public/` | FastAPI server, MCP client lifecycle, chat endpoints |
+| **RAG Engine** | `src/rag_engine.py` | Query embedding, retrieval, LLM answer generation |
+| **Document Ingestion** | `src/ingestion.py` | PDF parsing, chunking, embedding, ChromaDB indexing |
+| **LLM Provider** | `src/llm_provider.py` | Abstraction over Ollama / OpenAI for the RAG pipeline |
+| **Configuration** | `src/config.py` | Environment variables, defaults, validation |
+
+### LangChain + MCP Integration (Bonus)
+
+Rather than having the Web UI call backend Python functions directly, we took an intentionally over-engineered approach to demonstrate full MCP understanding:
+
+1. **On server startup**, `src/api.py` uses `langchain-mcp-adapters` to launch `python -m src.server` as a background subprocess.
+2. The adapter connects to the subprocess over **stdio** and discovers all available MCP tools automatically.
+3. Those tools are converted into native LangChain tools and handed to a **LangGraph ReAct agent**.
+4. When a user sends a chat message, the agent **autonomously decides** which MCP tool to call (query, summarize, compare, etc.) and synthesizes the result into a natural language response.
+
+This proves the MCP server is not just a standalone artifact — it is a fully consumable, protocol-compliant service that any MCP client (Claude, the Inspector, or our own LangChain agent) can use interchangeably.
 
 ---
 
@@ -81,10 +94,10 @@ An MCP (Model Context Protocol) server that enables AI agents to ask natural-lan
 ### Step 1: Clone and Install
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Priyam-A/nexla-mcp-rag.git
 cd nexla-mcp-rag
 
-# Create virtual environment (requires standard Python 3.11+)
+# Create virtual environment
 python -m venv venv
 
 # Activate (Windows PowerShell)
@@ -108,14 +121,15 @@ ollama pull llama3.2
 
 **Option B — OpenAI (Cloud, Requires API Key):**
 ```bash
-# Copy and edit the environment file
-cp .env.example .env
-# Add your OpenAI API key to .env
+# Create a .env file in the project root with:
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-your-key-here
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 ### Step 3: Add Documents
 
-Place your PDF files in the `documents/` directory:
+The provided PDF files are already included in the `documents/` directory. To add your own:
 ```bash
 cp /path/to/your/*.pdf documents/
 ```
@@ -124,7 +138,7 @@ cp /path/to/your/*.pdf documents/
 
 You have two ways to interact with the system:
 
-**Option A: The NotebookLM-Inspired Web UI (Bonus)**
+**Option A: The NotebookLM-Inspired Web UI (Recommended)**
 We built a custom frontend with chat history, document uploads, and source citations.
 ```bash
 # Start the FastAPI companion server
@@ -133,7 +147,7 @@ uvicorn src.api:app --port 8000
 ```
 
 **Option B: The Raw MCP Server**
-To run the standard MCP server on `stdio` transport for Claude Desktop:
+To run the standard MCP server on `stdio` transport for Claude Desktop or other MCP clients:
 ```bash
 python -m src.server
 ```
@@ -274,6 +288,9 @@ ChromaDB provides **built-in persistence and metadata filtering** out of the box
 ### Why dual LLM support (Ollama + OpenAI)?
 Ollama provides a **zero-cost, zero-key** experience (ideal for quick evaluation), while OpenAI offers higher answer quality. The config switch lets reviewers choose based on their setup.
 
+### Why LangChain + MCP Adapters for the Web UI?
+We intentionally chose to have the Web UI consume the MCP server over stdio (via `langchain-mcp-adapters`) rather than calling Python functions directly. This proves the MCP server is a fully standalone, protocol-compliant service — not just a code library. The LangGraph ReAct agent adds autonomous tool selection, so the UI doesn't need to hardcode which tool to call for each query.
+
 ### Chunking Strategy
 - **Page-boundary-aware splitting:** Each chunk carries `{document_name, page_number, chunk_index}` metadata
 - **1500 char chunks with 300 char overlap:** Balances context completeness with retrieval precision
@@ -290,21 +307,30 @@ Chunks scoring below `0.3` similarity are discarded before sending to the LLM. T
 - **Google Antigravity (Gemini)** — Primary AI coding assistant used throughout development
 
 ### How AI Was Used
-- **Architecture planning:** Discussed technology trade-offs (PyMuPDF vs pdfplumber, ChromaDB vs FAISS, local vs cloud embeddings) with the AI to weigh pros/cons
-- **Reference research:** AI searched for FastMCP official documentation and reference implementations (alejandro-ao/RAG-MCP) to understand real-world patterns
-- **Code generation:** Used AI for boilerplate generation (project structure, config management, ChromaDB setup)
-- **README drafting:** AI helped structure the README to cover all required sections
+
+**Architecture & Design Phase:**
+- Prompted the AI to compare technology options with structured trade-off tables (e.g., "Compare PyMuPDF vs pdfplumber for PDF text extraction — focus on speed, table support, and dependency complexity"). The AI returned detailed comparisons with concrete metrics that directly informed my choices.
+- Asked the AI to search the web for `langchain mcp` after I decided I wanted the Web UI to communicate with the MCP server over the official protocol. The AI found the `langchain-mcp-adapters` package, read its documentation, and designed the integration architecture using `MultiServerMCPClient` with stdio transport. This was a pivotal discovery that elevated the project from "MCP server + separate web app" to "MCP server consumed by its own LangChain agent."
+
+**Implementation Phase:**
+- Used AI for boilerplate generation: project scaffolding, dataclass definitions, ChromaDB client setup, FastAPI CORS configuration.
+- The AI generated the full NotebookLM-inspired frontend CSS from a single prompt describing the aesthetic I wanted. The glassmorphism effects and dark theme were produced on the first attempt.
+- Reference research: AI searched for FastMCP official documentation and reference implementations to understand real-world MCP patterns.
+
+**Debugging Phase:**
+- Spent significant time debugging Ollama's tool-calling instability with the AI. The local `llama3.2` 3B model repeatedly hallucinated JSON schema structures inside tool arguments (e.g., passing `{"type": "string", "value": "my question"}` instead of `"my question"`). The AI and I iterated through multiple fixes: simplifying Pydantic `Annotated` wrappers, adding few-shot examples to the system prompt, and upgrading to `qwen2.5:7b`. This debugging cycle taught me the practical limits of small local models for agentic workflows.
 
 ### What Worked & What Didn't
-- **What worked:** Trade-off discussions were highly productive — the AI provided structured comparisons with concrete metrics. Finding and synthesizing documentation from multiple sources (FastMCP docs, ChromaDB API) saved significant research time. The AI was exceptionally good at generating the UI CSS for the NotebookLM aesthetic.
+- **What worked:** Trade-off discussions were highly productive — the AI provided structured comparisons with concrete metrics. Finding and synthesizing documentation from multiple sources (FastMCP docs, ChromaDB API, LangChain MCP adapters) saved significant research time. The AI was exceptionally good at generating the UI CSS for the NotebookLM aesthetic.
 - **What didn't work:** The AI struggled with Windows-specific Python environment debugging. We hit a wall where `pymupdf` failed to install due to a `cmake` compilation error caused by a broken MSYS2 Python environment intercepting commands. The AI kept suggesting generic fixes until I explicitly ordered it to bypass the environment and use absolute paths to a clean Python 3.11 installation. File lock issues (`WinError 32`) on Windows also caused the AI to fail silent cleanup operations. Additionally, during testing, local LLMs (specifically `llama3.2` 3B via Ollama) proved to be rather unstable when handling complex tool-calling via LangChain. The model frequently hallucinated JSON schema structures inside its arguments instead of passing raw strings. While we added explicit prompt engineering and simplified the MCP tool schemas to wrangle Ollama into submission (primarily because we rapidly hit OpenAI rate/token limits during intensive testing and needed a fully local alternative), **using OpenAI (GPT-4) is highly recommended as the significantly more robust and stable approach for production deployments.**
 
 ### What I Overrode / Corrected
 - Initially the AI suggested using the standalone `fastmcp` package (PrefectHQ). I corrected this to use the **official Anthropic MCP SDK** (`from mcp.server.fastmcp import FastMCP`) for better spec compliance
 - Adjusted chunking parameters based on domain knowledge of the document types
+- Corrected multiple `langgraph` API breaking changes (`state_modifier` → `messages_modifier` → `prompt`) that the AI initially got wrong due to stale training data
 
 ### View on AI Tooling in Software Engineering
-AI coding assistants excel at **accelerating the known** — boilerplate, API integration patterns, documentation synthesis. They are less reliable for **architectural judgment** — the trade-off between "what's possible" and "what's appropriate" still requires human reasoning. The key skill is knowing when to accept AI suggestions and when to override them with domain knowledge.
+AI coding assistants excel at **accelerating the known** — boilerplate, API integration patterns, documentation synthesis. They are less reliable for **architectural judgment** — the trade-off between "what's possible" and "what's appropriate" still requires human reasoning. They are particularly unreliable when APIs evolve rapidly (as we saw with LangGraph's parameter naming changes across versions). The key skill is knowing when to accept AI suggestions and when to override them with domain knowledge.
 
 ---
 
