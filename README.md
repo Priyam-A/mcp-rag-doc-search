@@ -1,4 +1,4 @@
-# 📄 Nexla Document Intelligence MCP Server
+# 📄 Document Intelligence MCP Server
 
 An MCP (Model Context Protocol) server that enables AI agents to ask natural-language questions over PDF documents and receive grounded, source-attributed answers via a RAG (Retrieval-Augmented Generation) pipeline. Includes a **bonus** NotebookLM-inspired Web UI powered by an autonomous LangChain agent that consumes the MCP server over stdio.
 
@@ -94,8 +94,8 @@ This proves the MCP server is not just a standalone artifact — it is a fully c
 ### Step 1: Clone and Install
 
 ```bash
-git clone https://github.com/Priyam-A/nexla-mcp-rag.git
-cd nexla-mcp-rag
+git clone https://github.com/Priyam-A/mcp-rag-doc-search.git
+cd mcp-rag-doc-search
 
 # Create virtual environment
 python -m venv venv
